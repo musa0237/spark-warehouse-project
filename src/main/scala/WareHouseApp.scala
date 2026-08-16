@@ -1,10 +1,12 @@
 import org.apache.spark.sql.SparkSession
 
 import config.AppConfig
-import database.DatabaseInitializer
+import database.{DatabaseInitializer, JdbcDataAccess}
 import bronze.BronzeLoader
 import silver.SilverTransformer
 import gold.GoldTransformer
+import quality.GoldQualityChecks
+import quality.SilverQualityChecks
 
 
 
@@ -19,53 +21,48 @@ object WareHouseApp {
 
         try {
             println()
-            println("-----  Spark Data Warehouse Pipeline  -----")
+            println("============================================================")
+            println("=============  Spark Data Warehouse Pipeline  ==============")
+            println("============================================================")
             println()
 
-            // 1. Initialize database
+            // Initialize database
             println("Initializing database...")
             DatabaseInitializer.initialize()
+            val db = new JdbcDataAccess(spark)
 
-            // 2. Bronze Layer
+            // Bronze Layer
             println()
-            println("*****  Loading Bronze Layer  *****")
-            println("-----  Loading CRM Tables (Bronze) -----")
-            println()
-            BronzeLoader.loadCustomersInfo(spark)
-            BronzeLoader.loadProductsInfo(spark)
-            BronzeLoader.loadSalesDetails(spark)
-            println()
-            println("-----  Loading ERP Tables (Bronze) -----")
-            println()
-            BronzeLoader.loadCustAdditionalInfo(spark)
-            BronzeLoader.loadLocAddress(spark)
-            BronzeLoader.loadProductsCategory(spark)
+            val bronzeLoader = new BronzeLoader(spark, db)
+            bronzeLoader.run()
 
-            // 3. Silver Layer
+            // Silver Layer
             println()
-            println("*****  Loading Silver Layer  *****")
-            println("-----  Loading CRM Tables (Silver) -----")
-            SilverTransformer.transformCustomersInfo(spark)
-            SilverTransformer.transformProductsInfo(spark)
-            SilverTransformer.transformSalesDetails(spark)
-            println("-----  Loading ERP Tables (Silver) -----")
-            SilverTransformer.transformCustAdditionalInfo(spark)
-            SilverTransformer.transformLocAddress(spark)
-            SilverTransformer.transformProductsCategory(spark)
+            val silverTransformer = new SilverTransformer(spark, db)
+            silverTransformer.run()
 
-            // 4. Gold Layer
-            // println()
-            // println("*****  Loading Gold Layer  *****")
-            // GoldTransformer.createCustomerSummary(spark)
-            
+            // val silverQualityChecks = new SilverQualityChecks(spark, db)
+            // silverQualityChecks.run()
+
+            // Gold Layer
+            println()
+            val goldTransformer = new GoldTransformer(spark, db)
+            goldTransformer.run()
+
+            // val goldQualityChecks = new GoldQualityChecks(spark, db)
+            // goldQualityChecks.run()
 
             // Pipeline completed
             println()
-            println("-----  Pipeline completed successfully  -----")
+            println("============================================================")
+            println("============  Pipeline completed successfully  =============")
+            println("============================================================")
         }
         finally {
             spark.stop()
         }
     }
 }
+
+
 

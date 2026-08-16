@@ -3,20 +3,20 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.expressions.Window
 import config.AppConfig
+import database.JdbcDataAccess
 
 
 
-object SilverTransformer {
+class SilverTransformer(spark: SparkSession, db: JdbcDataAccess) {
 
-    def transformCustomersInfo(spark: SparkSession): Unit = {
+    import spark.implicits._
+
+    def transformCustomersInfo(): Unit = {
 
         println("Inserting Data Into: silver.crm_cust_info")
 
-        val bronzeCustInfoDF = spark.read
-            .jdbc(AppConfig.jdbcUrl, "bronze.crm_cust_info", AppConfig.jdbcProperties())
+        val bronzeCustInfoDF = db.readTable("bronze.crm_cust_info")
         
-        import spark.implicits._
-
         val windowSpec = Window.partitionBy("cst_id").orderBy($"cst_create_date".desc)
 
         val silverCustInfoDF = bronzeCustInfoDF
@@ -39,21 +39,16 @@ object SilverTransformer {
             .drop("flag_last", "ingestion_timestamp", "source")
         
         silverCustInfoDF.show(5)
-        silverCustInfoDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "silver.crm_cust_info", AppConfig.jdbcProperties())
+        db.writeTable(silverCustInfoDF, "silver.crm_cust_info")
 
         println("Silver Customers Info transformation completed.\n")
     }
 
-    def transformProductsInfo(spark: SparkSession): Unit = {
+    def transformProductsInfo(): Unit = {
 
         println("Inserting Data Into: silver.crm_prd_info")
 
-        val bronzePrdInfoDF = spark.read
-            .jdbc(AppConfig.jdbcUrl, "bronze.crm_prd_info", AppConfig.jdbcProperties())
-        
-        import spark.implicits._
+        val bronzePrdInfoDF = db.readTable("bronze.crm_prd_info")
 
         val windowSpec = Window.partitionBy("prd_key").orderBy($"prd_start_dt")
         
@@ -75,21 +70,17 @@ object SilverTransformer {
             .drop("ingestion_timestamp", "source")
         
         silverPrdInfoDF.show(5)
-        silverPrdInfoDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "silver.crm_prd_info", AppConfig.jdbcProperties())
+        db.writeTable(silverPrdInfoDF, "silver.crm_prd_info")
         
         println("Silver Products Info transformation completed.\n")
     }
 
-    def transformSalesDetails(spark: SparkSession): Unit = {
+    def transformSalesDetails(): Unit = {
 
         println("Inserting Data Into: silver.crm_sales_details")
 
-        val bronzeSalesDetailsDF = spark.read
-            .jdbc(AppConfig.jdbcUrl, "bronze.crm_sales_details", AppConfig.jdbcProperties())
+        val bronzeSalesDetailsDF = db.readTable("bronze.crm_sales_details")
         
-        import spark.implicits._
         val silverSalesDetailsDF = bronzeSalesDetailsDF
             .withColumn("sls_order_dt",
                 when($"sls_order_dt" === 0 || length($"sls_order_dt".cast("string")) =!= 8, lit(null))
@@ -120,21 +111,17 @@ object SilverTransformer {
             .drop("ingestion_timestamp", "source")        
         
         silverSalesDetailsDF.show(5)
-        silverSalesDetailsDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "silver.crm_sales_details", AppConfig.jdbcProperties())
+        db.writeTable(silverSalesDetailsDF, "silver.crm_sales_details")
         
         println("Silver Sales Details transformation completed.\n")
     }
 
-    def transformCustAdditionalInfo(spark: SparkSession): Unit = {
+    def transformCustAdditionalInfo(): Unit = {
 
         println("Inserting Data Into: silver.erp_cust_az12")
 
-        val bronzeCustAz12DF = spark.read
-            .jdbc(AppConfig.jdbcUrl, "bronze.erp_cust_az12", AppConfig.jdbcProperties())
+        val bronzeCustAz12DF = db.readTable("bronze.erp_cust_az12")
         
-        import spark.implicits._
         val silverCustAz12DF = bronzeCustAz12DF
             .withColumn("cid",
                 when($"cid".like("NAS%"), substring($"cid", 4, 99))
@@ -153,19 +140,16 @@ object SilverTransformer {
             .drop("ingestion_timestamp", "source")            
         
         silverCustAz12DF.show(5)
-        silverCustAz12DF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "silver.erp_cust_az12", AppConfig.jdbcProperties())
+        db.writeTable(silverCustAz12DF, "silver.erp_cust_az12")
         
         println("Silver Customers Additionnal Info transformation completed.\n")
     }
 
-    def transformLocAddress(spark: SparkSession): Unit = {
+    def transformLocAddress(): Unit = {
 
         println("Inserting Data Into: silver.erp_loc_a101")
 
-        val bronzeLocA101DF = spark.read
-            .jdbc(AppConfig.jdbcUrl, "bronze.erp_loc_a101", AppConfig.jdbcProperties())
+        val bronzeLocA101DF = db.readTable("bronze.erp_loc_a101")
 
         import spark.implicits._
         val silverLocA101DF = bronzeLocA101DF
@@ -180,30 +164,45 @@ object SilverTransformer {
             .drop("ingestion_timestamp", "source")
         
         silverLocA101DF.show(5)
-        silverLocA101DF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "silver.erp_loc_a101", AppConfig.jdbcProperties())
+        db.writeTable(silverLocA101DF, "silver.erp_loc_a101")
         
         println("Silver Customer Country Location transformation completed.\n")
     }
 
-    def transformProductsCategory(spark: SparkSession): Unit = {
+    def transformProductsCategory(): Unit = {
 
         println("Inserting Data Into: silver.erp_px_cat_g1v2")
 
-        val bronzePxCatG1V2DF = spark.read
-            .jdbc(AppConfig.jdbcUrl, "bronze.erp_px_cat_g1v2", AppConfig.jdbcProperties())
+        val bronzePxCatG1V2DF = db.readTable("bronze.erp_px_cat_g1v2")
         
         val silverPxCatG1V2DF = bronzePxCatG1V2DF
             .withColumn("dwh_create_date", current_timestamp())
             .drop("ingestion_timestamp", "source")
         
         silverPxCatG1V2DF.show(5)
-        silverPxCatG1V2DF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "silver.erp_px_cat_g1v2", AppConfig.jdbcProperties())
+        db.writeTable(silverPxCatG1V2DF, "silver.erp_px_cat_g1v2")
         
         println("Silver Products Category transformation completed.\n")
+    }
+
+    def run(): Unit = {
+        println("============================================================")
+        println("============ Starting Silver Transformations ===============")
+        println("============================================================")
+        println()
+        println("-----  Loading CRM Tables (Silver) -----")
+        println()
+        transformCustomersInfo()
+        transformProductsInfo()
+        transformSalesDetails()
+        println("-----  Loading ERP Tables (Silver) -----")
+        transformCustAdditionalInfo()
+        transformLocAddress()
+        transformProductsCategory()
+        println()
+        println("============================================================")
+        println("=========== Silver Transformations completed ===============")
+        println("============================================================")
     }
 }
 

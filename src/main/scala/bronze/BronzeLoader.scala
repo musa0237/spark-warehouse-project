@@ -7,12 +7,13 @@ import schema.{
     CustomerSchema, ProductSchema, SalesSchema, 
     CustAz12Schema, LocA101Schema, PxCatSchema
 }
+import database.JdbcDataAccess
 
 
 
-object BronzeLoader {
+class BronzeLoader(spark: SparkSession, db: JdbcDataAccess) {
 
-    def loadCustomersInfo(spark: SparkSession): Unit = {
+    private def loadCustomersInfo(): Unit = {
 
         println("Inserting Data Into: bronze.crm_cust_info")
 
@@ -26,14 +27,12 @@ object BronzeLoader {
             .withColumn("source", lit(AppConfig.custInfoPath))
 
         custInfoPlusDF.show(5)
-        custInfoPlusDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "bronze.crm_cust_info", AppConfig.jdbcProperties())
+        db.writeTable(custInfoPlusDF, "bronze.crm_cust_info")
 
         println("Bronze Customers' info ingestion completed.")
     }
 
-    def loadProductsInfo(spark: SparkSession): Unit = {
+    private def loadProductsInfo(): Unit = {
 
         println("Inserting Data Into: bronze.crm_prd_info")
 
@@ -47,15 +46,13 @@ object BronzeLoader {
             .withColumn("source", lit(AppConfig.prodInfoPath))
 
         prodInfoPlusDF.show(5)
-        prodInfoPlusDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "bronze.crm_prd_info", AppConfig.jdbcProperties())
+        db.writeTable(prodInfoPlusDF, "bronze.crm_prd_info")
 
         println("Bronze Products' info ingestion completed.")
     }
 
 
-    def loadSalesDetails(spark: SparkSession): Unit = {
+    private def loadSalesDetails(): Unit = {
 
         println("Inserting Data Into: bronze.crm_sales_details")
 
@@ -69,14 +66,12 @@ object BronzeLoader {
             .withColumn("source", lit(AppConfig.salesDetailsPath))
 
         salesDetailsPlusDF.show(5)
-        salesDetailsPlusDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "bronze.crm_sales_details", AppConfig.jdbcProperties())
+        db.writeTable(salesDetailsPlusDF, "bronze.crm_sales_details")
 
         println("Bronze Sales details ingestion completed.")
     }
 
-    def loadCustAdditionalInfo(spark: SparkSession): Unit = {
+    private def loadCustAdditionalInfo(): Unit = {
 
         println("Inserting Data Into: bronze.erp_cust_az12")
 
@@ -90,14 +85,12 @@ object BronzeLoader {
             .withColumn("source", lit(AppConfig.custAz12Path))
 
         custAz12PlusDF.show(5)
-        custAz12PlusDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "bronze.erp_cust_az12", AppConfig.jdbcProperties())
+        db.writeTable(custAz12PlusDF, "bronze.erp_cust_az12")
 
         println("Bronze Customer additional info ingestion completed.")
     }
 
-    def loadLocAddress(spark: SparkSession): Unit = {
+    private def loadLocAddress(): Unit = {
 
         println("Inserting Data Into: bronze.erp_loc_a101")
 
@@ -111,14 +104,12 @@ object BronzeLoader {
             .withColumn("source", lit(AppConfig.locA101Path))
 
         locA101PlusDF.show(5)
-        locA101PlusDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "bronze.erp_loc_a101", AppConfig.jdbcProperties())
+        db.writeTable(locA101PlusDF, "bronze.erp_loc_a101")
 
         println("Bronze Customer Country Location ingestion completed.")
     }
 
-    def loadProductsCategory(spark: SparkSession): Unit = {
+    private def loadProductsCategory(): Unit = {
 
         println("Inserting Data Into: bronze.erp_px_cat_g1v2")
 
@@ -132,11 +123,31 @@ object BronzeLoader {
             .withColumn("source", lit(AppConfig.pxCatG1v2Path))
 
         pxCatG1V2PlusDF.show(5)
-        pxCatG1V2PlusDF.write
-            .mode("overwrite")
-            .jdbc(AppConfig.jdbcUrl, "bronze.erp_px_cat_g1v2", AppConfig.jdbcProperties())
+        db.writeTable(pxCatG1V2PlusDF, "bronze.erp_px_cat_g1v2")
 
         println("Bronze Product Category ingestion completed.")
+    }
+
+    def run(): Unit = {
+        println("============================================================")
+        println("================= Starting Bonze Loading ===================")
+        println("============================================================")
+        println()
+        println("-----  Loading CRM Tables (Bronze) -----")
+        println()
+        loadCustomersInfo()
+        loadProductsInfo()
+        loadSalesDetails()
+        println()
+        println("-----  Loading ERP Tables (Bronze) -----")
+        println()
+        loadCustAdditionalInfo()
+        loadLocAddress()
+        loadProductsCategory()
+        println()
+        println("============================================================")
+        println("=============== Bronze Loading completed ===================")
+        println("============================================================")
     }
 }
 
