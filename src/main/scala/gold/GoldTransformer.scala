@@ -75,7 +75,6 @@ class GoldTransformer(spark: SparkSession, db: JdbcDataAccess) {
             )
             
         joinedDF.show(5)
-        joinedDF.printSchema
         db.writeTable(joinedDF, "gold.dim_products")
 
         println("Gold Dimension gold.dim_products completed.\n")
@@ -104,7 +103,6 @@ class GoldTransformer(spark: SparkSession, db: JdbcDataAccess) {
                 $"sd.sls_price".as("price")
             )
 
-        joinedDF.printSchema
         db.writeTable(joinedDF, "gold.fact_sales")
 
         println("Gold Fact gold.fact_sales completed.\n")

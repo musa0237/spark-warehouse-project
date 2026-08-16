@@ -41,16 +41,16 @@ object WareHouseApp {
             val silverTransformer = new SilverTransformer(spark, db)
             silverTransformer.run()
 
-            // val silverQualityChecks = new SilverQualityChecks(spark, db)
-            // silverQualityChecks.run()
+            val silverQualityChecks = new SilverQualityChecks(spark, db)
+            silverQualityChecks.run()
 
             // Gold Layer
             println()
             val goldTransformer = new GoldTransformer(spark, db)
             goldTransformer.run()
 
-            // val goldQualityChecks = new GoldQualityChecks(spark, db)
-            // goldQualityChecks.run()
+            val goldQualityChecks = new GoldQualityChecks(spark, db)
+            goldQualityChecks.run()
 
             // Pipeline completed
             println()
