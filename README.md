@@ -97,7 +97,7 @@ Spark communicates with PostgreSQL through JDBC for reading and writing warehous
 
 ---
 
-# Compile and Run:
+### Compile and Run:
     sbt clean assembly
 
     spark-submit --class WareHouseApp \
@@ -107,19 +107,19 @@ Spark communicates with PostgreSQL through JDBC for reading and writing warehous
 
 ## 📊 Skills Demonstrated
 
-- Data Warehousing
+* Data Warehousing
 * Data Engineering
 * Apache Spark
 * Scala
 * PostgreSQL
 * JDBC
-- ETL Development
-- Data Modeling (Star Schema)
-- SQL Development
-- Data Cleaning & Transformation
-- Analytical Reporting
-- Database Design
-- Documentation
+* ETL Development
+* Data Modeling (Star Schema)
+* SQL Development
+* Data Cleaning & Transformation
+* Analytical Reporting
+* Database Design
+* Documentation
 
 ---
 
