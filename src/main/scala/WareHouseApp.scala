@@ -1,4 +1,5 @@
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.SparkConf
 
 import config.AppConfig
 import database.{DatabaseInitializer, JdbcDataAccess}
@@ -7,7 +8,6 @@ import silver.SilverTransformer
 import gold.GoldTransformer
 import quality.GoldQualityChecks
 import quality.SilverQualityChecks
-
 
 
 object WareHouseApp {
